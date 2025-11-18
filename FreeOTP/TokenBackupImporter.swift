@@ -155,10 +155,15 @@ final class TokenBackupImporter {
         bytes.reserveCapacity(secretArray.count)
 
         for value in secretArray {
-            guard value >= 0 && value <= 255 else {
+            var normalized = value
+            if normalized < 0 {
+                normalized += 256
+            }
+
+            guard normalized >= 0 && normalized <= 255 else {
                 return nil
             }
-            bytes.append(UInt8(value))
+            bytes.append(UInt8(normalized))
         }
 
         return Data(bytes)
