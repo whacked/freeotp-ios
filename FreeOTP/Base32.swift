@@ -73,3 +73,34 @@ extension String {
         return output
     }
 }
+
+private let base32Alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567")
+
+extension Data {
+    /// Encodes the data as a Base32 string (unpadded) suitable for otpauth URIs.
+    func base32EncodedString() -> String {
+        guard isEmpty == false else { return "" }
+
+        var output = ""
+        var buffer = 0
+        var bitsLeft = 0
+
+        for byte in self {
+            buffer = (buffer << 8) | Int(byte)
+            bitsLeft += 8
+
+            while bitsLeft >= 5 {
+                let index = (buffer >> (bitsLeft - 5)) & 0x1F
+                output.append(base32Alphabet[Int(index)])
+                bitsLeft -= 5
+            }
+        }
+
+        if bitsLeft > 0 {
+            let index = (buffer << (5 - bitsLeft)) & 0x1F
+            output.append(base32Alphabet[Int(index)])
+        }
+
+        return output
+    }
+}

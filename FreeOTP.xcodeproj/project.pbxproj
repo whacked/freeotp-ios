@@ -19,6 +19,7 @@
 		282F614E2AD49328008A22F6 /* fa-brands-400.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 282F614B2AD49328008A22F6 /* fa-brands-400.ttf */; };
 		282F614F2AD49328008A22F6 /* fa-regular-400.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 282F614C2AD49328008A22F6 /* fa-regular-400.ttf */; };
 		2898E5C62B0700A300B7A1C3 /* TokenBackupExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2898E5C52B0700A300B7A1C3 /* TokenBackupExporter.swift */; };
+		2898E5C82B0701B200B7A1C3 /* TokenBackupImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2898E5C72B0701B200B7A1C3 /* TokenBackupImporter.swift */; };
 		FD8474C82B0B5C7D00A0B2C1 /* Base32.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD8474C62B0B5C7D00A0B2C1 /* Base32.swift */; };
 		FD8474C92B0B5C7D00A0B2C1 /* AutoLayoutHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD8474C72B0B5C7D00A0B2C1 /* AutoLayoutHelpers.swift */; };
 		2832BFF7246C7F810079B2D7 /* Icon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2832BFF6246C7F810079B2D7 /* Icon.swift */; };
@@ -109,6 +110,7 @@
 		282D9E292AEC0BDE000C6699 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		282D9E2A2AEC0BDE000C6699 /* TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
 		2898E5C52B0700A300B7A1C3 /* TokenBackupExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenBackupExporter.swift; sourceTree = "<group>"; };
+		2898E5C72B0701B200B7A1C3 /* TokenBackupImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenBackupImporter.swift; sourceTree = "<group>"; };
 		282D9E2B2AEC0BDE000C6699 /* ImageDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDownloader.swift; sourceTree = "<group>"; };
 		282D9E2C2AEC0BDE000C6699 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		282D9E2D2AEC0BDE000C6699 /* URIIconViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URIIconViewController.swift; sourceTree = "<group>"; };
@@ -337,6 +339,7 @@
 				F10D88FB1B56A54B00482D15 /* Token.swift */,
 				F10D88FE1B56A54B00482D15 /* TokenStore.swift */,
 				2898E5C52B0700A300B7A1C3 /* TokenBackupExporter.swift */,
+				2898E5C72B0701B200B7A1C3 /* TokenBackupImporter.swift */,
 				F18FA5431B58D30800B1CEAD /* KeychainStore.swift */,
 				28C0090423EDE4840034A321 /* URIParameters.swift */,
 				2867173223F442FE0009410C /* TokenIcon.swift */,
@@ -513,6 +516,7 @@
 				2820C85A23EE53CB002D3695 /* URILockViewController.swift in Sources */,
 				F10D890E1B56A54B00482D15 /* TokenStore.swift in Sources */,
 				2898E5C62B0700A300B7A1C3 /* TokenBackupExporter.swift in Sources */,
+				2898E5C82B0701B200B7A1C3 /* TokenBackupImporter.swift in Sources */,
 				F10D890F1B56A54B00482D15 /* TokensViewController.swift in Sources */,
 				282341B4245A13D000025167 /* RecommendedIconCell.swift in Sources */,
 				F10D890B1B56A54B00482D15 /* Token.swift in Sources */,

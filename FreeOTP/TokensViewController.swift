@@ -20,6 +20,7 @@
 
 import Foundation
 import UIKit
+import UniformTypeIdentifiers
 
 class TokensViewController : UICollectionViewController, UICollectionViewDelegateFlowLayout, UIPopoverPresentationControllerDelegate,
                              UICollectionViewDragDelegate, UICollectionViewDropDelegate {
@@ -140,8 +141,8 @@ class TokensViewController : UICollectionViewController, UICollectionViewDelegat
 
     @IBAction func menuClicked(_ sender: UIBarButtonItem) {
         let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        controller.addAction(UIAlertAction(title: "Import", style: .default, handler: { _ in
-            // placeholder for upcoming import implementation
+        controller.addAction(UIAlertAction(title: "Import", style: .default, handler: { [weak self] _ in
+            self?.presentImportPicker()
         }))
         controller.addAction(UIAlertAction(title: "Export", style: .default, handler: { [weak self] _ in
             self?.exportTokens(anchor: sender)
@@ -360,6 +361,33 @@ class TokensViewController : UICollectionViewController, UICollectionViewDelegat
         }
     }
 
+    private func presentImportPicker() {
+        let picker: UIDocumentPickerViewController
+        if #available(iOS 14.0, *) {
+            picker = UIDocumentPickerViewController(forOpeningContentTypes: [UTType.json], asCopy: true)
+        } else {
+            picker = UIDocumentPickerViewController(documentTypes: ["public.json"], in: .import)
+        }
+
+        picker.delegate = self
+        picker.allowsMultipleSelection = false
+        picker.modalPresentationStyle = .formSheet
+        present(picker, animated: true)
+    }
+
+    private func importBackup(from url: URL) {
+        do {
+            let importer = TokenBackupImporter(store: store)
+            try importer.importBackup(from: url)
+            searchingTokens = false
+            tokensArray = store.getAllTokens()
+            searchedTokensArray.removeAll()
+            reloadData()
+        } catch {
+            presentSimpleAlert(title: "Import Failed", message: error.localizedDescription)
+        }
+    }
+    
     private func exportTokens(anchor: UIBarButtonItem) {
         do {
             let exporter = TokenBackupExporter(store: store)
@@ -436,5 +464,15 @@ extension TokensViewController: UISearchBarDelegate {
         searchingTokens = false
         tokensArray.removeAll()
         searchedTokensArray.removeAll()
+    }
+}
+
+extension TokensViewController: UIDocumentPickerDelegate {
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard let url = urls.first else {
+            return
+        }
+
+        importBackup(from: url)
     }
 }
