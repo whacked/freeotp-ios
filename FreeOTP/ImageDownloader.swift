@@ -21,9 +21,19 @@
 import Foundation
 import Photos
 import UIKit
-import SDWebImage
 
 class ImageDownloader : NSObject {
+    private static let cache = NSCache<NSURL, UIImage>()
+    private static let taskQueue = DispatchQueue(label: "org.freeotp.imagedownloader.tasks")
+    private static let tasks = NSMapTable<UIImageView, URLSessionDataTask>(keyOptions: .weakMemory, valueOptions: .strongMemory)
+    private static let session: URLSession = {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 30
+        configuration.timeoutIntervalForResource = 60
+        configuration.requestCachePolicy = .returnCacheDataElseLoad
+        return URLSession(configuration: configuration)
+    }()
+
     fileprivate let DEFAULT = UIImage(contentsOfFile: Bundle.main.path(forResource: "default", ofType: "png")!)!
     fileprivate let size: CGSize
 
@@ -32,16 +42,56 @@ class ImageDownloader : NSObject {
         super.init()
     }
 
+    private func cachedImage(for url: URL) -> UIImage? {
+        ImageDownloader.cache.object(forKey: url as NSURL)
+    }
+
+    private func track(task: URLSessionDataTask?, for imageView: UIImageView) {
+        ImageDownloader.taskQueue.sync {
+            if let task = task {
+                ImageDownloader.tasks.setObject(task, forKey: imageView)
+            } else {
+                ImageDownloader.tasks.removeObject(forKey: imageView)
+            }
+        }
+    }
+
+    private func currentTask(for imageView: UIImageView) -> URLSessionDataTask? {
+        ImageDownloader.taskQueue.sync {
+            ImageDownloader.tasks.object(forKey: imageView)
+        }
+    }
+
+    private func cancelLoad(for imageView: UIImageView) {
+        if let task = currentTask(for: imageView) {
+            task.cancel()
+            track(task: nil, for: imageView)
+        }
+    }
+
     func isPHAssetAuthorized(_ status: PHAuthorizationStatus) -> Bool! {
-        switch status {
-        case .denied, .restricted:
-            return false
-        case .notDetermined:
-            return nil
-        case .authorized, .limited:
-            return true
-        @unknown default:
-            return false
+        if #available(iOS 14.0, *) {
+            switch status {
+            case .denied, .restricted:
+                return false
+            case .notDetermined:
+                return nil
+            case .authorized, .limited:
+                return true
+            @unknown default:
+                return false
+            }
+        } else {
+            switch status {
+            case .denied, .restricted:
+                return false
+            case .notDetermined:
+                return nil
+            case .authorized:
+                return true
+            @unknown default:
+                return false
+            }
         }
     }
 
@@ -87,6 +137,48 @@ class ImageDownloader : NSObject {
         return completion(DEFAULT)
     }
 
+    private func loadRemoteImage(_ url: URL, into imageView: UIImageView, completion: @escaping (UIImage) -> Void) {
+        if let cached = cachedImage(for: url) {
+            DispatchQueue.main.async {
+                imageView.image = cached
+                completion(cached)
+            }
+            return
+        }
+
+        cancelLoad(for: imageView)
+        DispatchQueue.main.async {
+            imageView.image = self.DEFAULT
+        }
+
+        var task: URLSessionDataTask?
+        task = ImageDownloader.session.dataTask(with: url) { [weak self, weak imageView] data, _, _ in
+            guard let self = self, let imageView = imageView, let task = task else { return }
+            defer { self.track(task: nil, for: imageView) }
+
+            guard self.currentTask(for: imageView) === task else { return }
+
+            guard let data = data, let image = UIImage(data: data) else {
+                DispatchQueue.main.async {
+                    imageView.image = self.DEFAULT
+                    completion(self.DEFAULT)
+                }
+                return
+            }
+
+            ImageDownloader.cache.setObject(image, forKey: url as NSURL)
+
+            DispatchQueue.main.async {
+                imageView.image = image
+                completion(image)
+            }
+        }
+
+        guard let task = task else { return }
+        track(task: task, for: imageView)
+        task.resume()
+    }
+
     func fromURL(_ url: URL, _ iv: UIImageView, completion: @escaping (UIImage) -> Void) {
         if let scheme = url.scheme {
             switch scheme {
@@ -101,12 +193,7 @@ class ImageDownloader : NSObject {
             case "http":
                 fallthrough
             case "https":
-                iv.sd_setImage(with: url, placeholderImage: self.DEFAULT,
-                               completed: { (image, error, cacheType, url) in
-                    if let image {
-                        completion(image)
-                    }
-                })
+                loadRemoteImage(url, into: iv, completion: completion)
                 return
             default:
                 break

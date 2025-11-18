@@ -18,7 +18,6 @@
 // limitations under the License.
 //
 
-import Base32
 import Foundation
 
 public final class OTP : NSObject, KeychainStorable {

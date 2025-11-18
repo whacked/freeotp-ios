@@ -22,7 +22,4 @@ Pull requests on GitHub are welcome under the Apache 2.0 license, see
 
 ### Install Build dependencies
 
-You need to have [Carthage](https://github.com/Carthage/Carthage) installed for managing dependencies. In simple steps:
-
-    brew install carthage
-    carthage update --use-xcframeworks --platform iOS
+All dependencies are now part of the repository. Open `FreeOTP.xcodeproj` with a recent version of Xcode, select a simulator or device, and build.

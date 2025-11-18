@@ -18,7 +18,6 @@
 // limitations under the License.
 //
 
-import TinyConstraints
 import UIKit
 
 protocol TokenCellDelegate: AnyObject {
@@ -66,7 +65,7 @@ class TokenCell: UICollectionViewCell {
         let view = UILabel()
         view.font = .dynamicSystemFont(ofSize: 16, weight: .regular)
         view.textColor = UIColor.app.primaryText
-        view.setCompressionResistance(.init(751), for: .vertical)
+        view.setCompressionResistance(UILayoutPriority(rawValue: 751), for: .vertical)
         return view
     }()
 
