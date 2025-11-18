@@ -114,7 +114,7 @@ final class TokenBackupImporter {
             combined = UUID().uuidString
         }
 
-        return combined.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? combined
+        return combined
     }
 
     private func dataFrom(secretArray: [Int]) -> Data? {
