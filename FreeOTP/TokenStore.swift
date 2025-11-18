@@ -161,4 +161,10 @@ open class TokenStore : NSObject {
 
         return false
     }
+
+    func eraseAll() {
+        while count > 0 {
+            _ = erase(index: 0)
+        }
+    }
 }

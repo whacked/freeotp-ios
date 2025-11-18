@@ -26,14 +26,25 @@ enum TokenImportError: LocalizedError {
     }
 }
 
+struct TokenImportFailure {
+    let index: Int
+    let label: String
+    let reason: String
+}
+
 final class TokenBackupImporter {
     private let store: TokenStore
+    private struct PreparedEntry {
+        let index: Int
+        let label: String
+        let components: URLComponents
+    }
 
     init(store: TokenStore = TokenStore()) {
         self.store = store
     }
 
-    func importBackup(from url: URL) throws {
+    func importBackup(from url: URL) throws -> [TokenImportFailure] {
         let needsAccess = url.startAccessingSecurityScopedResource()
         defer {
             if needsAccess {
@@ -42,10 +53,23 @@ final class TokenBackupImporter {
         }
 
         let data = try Data(contentsOf: url)
-        try importBackup(from: data)
+        let plan = try prepareEntries(from: data)
+
+        store.eraseAll()
+
+        var failures = plan.failures
+        for entry in plan.validEntries.reversed() {
+            if store.add(entry.components) == nil {
+                let reason = TokenImportError.addFailed.errorDescription ?? "Failed to import token."
+                failures.append(TokenImportFailure(index: entry.index, label: entry.label, reason: reason))
+            }
+        }
+
+        failures.sort { $0.index < $1.index }
+        return failures
     }
 
-    private func importBackup(from data: Data) throws {
+    private func prepareEntries(from data: Data) throws -> (validEntries: [PreparedEntry], failures: [TokenImportFailure]) {
         let decoder = JSONDecoder()
         let backup = try decoder.decode(TokenBackup.self, from: data)
 
@@ -54,12 +78,23 @@ final class TokenBackupImporter {
         }
 
         let pairs = Array(zip(backup.tokenOrder, backup.tokens))
-        for (_, entry) in pairs.reversed() {
-            try add(entry: entry)
+        var successes: [PreparedEntry] = []
+        var failures: [TokenImportFailure] = []
+
+        for (idx, pair) in pairs.enumerated() {
+            let entry = pair.1
+            do {
+                let components = try makeComponents(for: entry)
+                successes.append(PreparedEntry(index: idx + 1, label: entry.label, components: components))
+            } catch {
+                failures.append(TokenImportFailure(index: idx + 1, label: entry.label, reason: error.localizedDescription))
+            }
         }
+
+        return (successes, failures)
     }
 
-    private func add(entry: TokenBackup.Entry) throws {
+    private func makeComponents(for entry: TokenBackup.Entry) throws -> URLComponents {
         let type = entry.type.lowercased()
         guard type == "hotp" || type == "totp" else {
             throw TokenImportError.unsupportedTokenType(entry.type)
@@ -76,7 +111,7 @@ final class TokenBackupImporter {
 
         var queryItems = [
             URLQueryItem(name: "secret", value: secretData.base32EncodedString()),
-            URLQueryItem(name: "algorithm", value: entry.algo.lowercased()),
+            URLQueryItem(name: "algorithm", value: entry.algo.uppercased()),
             URLQueryItem(name: "digits", value: String(entry.digits))
         ]
 
@@ -92,9 +127,7 @@ final class TokenBackupImporter {
 
         components.queryItems = queryItems
 
-        guard store.add(components) != nil else {
-            throw TokenImportError.addFailed
-        }
+        return components
     }
 
     private func makePath(issuer: String, label: String) -> String {

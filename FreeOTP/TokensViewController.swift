@@ -378,14 +378,26 @@ class TokensViewController : UICollectionViewController, UICollectionViewDelegat
     private func importBackup(from url: URL) {
         do {
             let importer = TokenBackupImporter(store: store)
-            try importer.importBackup(from: url)
+            let failures = try importer.importBackup(from: url)
             searchingTokens = false
             tokensArray = store.getAllTokens()
             searchedTokensArray.removeAll()
             reloadData()
+
+            if failures.isEmpty == false {
+                presentImportFailures(failures)
+            }
         } catch {
             presentSimpleAlert(title: "Import Failed", message: error.localizedDescription)
         }
+    }
+
+    private func presentImportFailures(_ failures: [TokenImportFailure]) {
+        let lines = failures.map { "\($0.index). \($0.label.isEmpty ? "(no label)" : $0.label) — \($0.reason)" }
+        let message = lines.joined(separator: "\n")
+        let alert = UIAlertController(title: "Some entries failed to import", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
     
     private func exportTokens(anchor: UIBarButtonItem) {
