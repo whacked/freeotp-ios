@@ -32,6 +32,7 @@ class TokensViewController : UICollectionViewController, UICollectionViewDelegat
     @IBOutlet weak var aboutButton: UIBarButtonItem!
     @IBOutlet weak var scanButton: UIBarButtonItem!
     @IBOutlet weak var addButton: UIBarButtonItem!
+    @IBOutlet weak var menuButton: UIBarButtonItem!
     
     private lazy var emptyStateView = EmptyStateView()
     var searchController: UISearchController!
@@ -135,6 +136,23 @@ class TokensViewController : UICollectionViewController, UICollectionViewDelegat
     
     @IBAction func addClicked(_ sender: UIBarButtonItem) {
         showAddScreen(sender)
+    }
+
+    @IBAction func menuClicked(_ sender: UIBarButtonItem) {
+        let controller = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        controller.addAction(UIAlertAction(title: "Import", style: .default, handler: { _ in
+            // placeholder for upcoming import implementation
+        }))
+        controller.addAction(UIAlertAction(title: "Export", style: .default, handler: { [weak self] _ in
+            self?.exportTokens(anchor: sender)
+        }))
+        controller.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+
+        if let popover = controller.popoverPresentationController {
+            popover.barButtonItem = sender
+        }
+
+        present(controller, animated: true)
     }
     
     private func showScanScreen(_ sender: AnyObject) {
@@ -290,6 +308,14 @@ class TokensViewController : UICollectionViewController, UICollectionViewDelegat
         } else {
             addButton.image = UIImage.fontAwesomeIcon(faName: "fa-plus", faType: .solid, textColor: .white)
         }
+
+        if #available(iOS 13.0, *) {
+            menuButton.image = UIImage(systemName: "line.3.horizontal")
+        } else {
+            menuButton.image = UIImage.fontAwesomeIcon(faName: "fa-bars", faType: .solid, textColor: .white)
+        }
+
+        navigationItem.rightBarButtonItems = [menuButton, aboutButton, scanButton, addButton]
         
         addButton.accessibilityIdentifier = "manualAddButton"
 
@@ -332,6 +358,31 @@ class TokensViewController : UICollectionViewController, UICollectionViewDelegat
         UIView.animate(withDuration: 0.25) {
             self.emptyStateView.alpha = self.store.count == 0 ? 1 : 0
         }
+    }
+
+    private func exportTokens(anchor: UIBarButtonItem) {
+        do {
+            let exporter = TokenBackupExporter(store: store)
+            let fileURL = try exporter.exportFileURL()
+            let activity = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+            activity.completionWithItemsHandler = { _, _, _, _ in
+                try? FileManager.default.removeItem(at: fileURL)
+            }
+
+            if let popover = activity.popoverPresentationController {
+                popover.barButtonItem = anchor
+            }
+
+            present(activity, animated: true)
+        } catch {
+            presentSimpleAlert(title: "Export Failed", message: error.localizedDescription)
+        }
+    }
+
+    private func presentSimpleAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
     
     private func configureSearchBar() {

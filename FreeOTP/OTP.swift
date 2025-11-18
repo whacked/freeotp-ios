@@ -28,6 +28,31 @@ public final class OTP : NSObject, KeychainStorable {
     fileprivate var size: Int = Int(CC_SHA1_DIGEST_LENGTH)
     fileprivate var secret: Data = Data()
     fileprivate var digits: Int = 6
+    
+    var algorithmName: String {
+        switch algo {
+        case Int(kCCHmacAlgMD5):
+            return "MD5"
+        case Int(kCCHmacAlgSHA256):
+            return "SHA256"
+        case Int(kCCHmacAlgSHA384):
+            return "SHA384"
+        case Int(kCCHmacAlgSHA512):
+            return "SHA512"
+        case Int(kCCHmacAlgSHA224):
+            return "SHA224"
+        default:
+            return "SHA1"
+        }
+    }
+
+    var digitsCount: Int {
+        return digits
+    }
+
+    var secretBytes: [Int] {
+        return secret.map { Int($0) }
+    }
 
     public init?(urlc: URLComponents) {
         account = UUID().uuidString

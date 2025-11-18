@@ -52,6 +52,11 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="FreeOTP" id="L5z-P6-1cO">
                         <rightBarButtonItems>
+                            <barButtonItem title="Menu" id="pPZ-Gs-XaY">
+                                <connections>
+                                    <action selector="menuClicked:" destination="mGg-KB-Kzc" id="3aR-OZ-oH1"/>
+                                </connections>
+                            </barButtonItem>
                             <barButtonItem title="About" image="info.circle" catalog="system" id="08x-7R-jHE">
                                 <connections>
                                     <segue destination="YSu-du-Vr6" kind="presentation" id="bYu-33-wCR"/>
@@ -72,6 +77,7 @@
                     <connections>
                         <outlet property="aboutButton" destination="08x-7R-jHE" id="2Jk-2P-gmW"/>
                         <outlet property="addButton" destination="8iQ-Fw-K4R" id="uKr-9e-eo0"/>
+                        <outlet property="menuButton" destination="pPZ-Gs-XaY" id="cbJ-Hz-yqE"/>
                         <outlet property="scanButton" destination="C1q-Am-S3f" id="RBV-jd-hZM"/>
                     </connections>
                 </collectionViewController>

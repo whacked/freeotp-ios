@@ -66,6 +66,14 @@ public final class Token : NSObject, KeychainStorable, Codable, NSItemProviderRe
 
     fileprivate (set) public var kind: Kind = .hotp
 
+    var counterValue: Int64 {
+        return counter
+    }
+
+    var periodValue: Int64 {
+        return period
+    }
+
     public var locked: Bool = false {
         didSet {
             if let otp = OTP.store.load(account) {
