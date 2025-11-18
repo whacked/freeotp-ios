@@ -49,12 +49,13 @@ class AboutViewController : UIViewController, UITextViewDelegate {
     override func viewWillAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        versionLabel.text = "FreeOTP \(appVersion)"
+        versionLabel.text = "FreeOTPm \(appVersion)"
         versionLabel.font = UIFont.boldSystemFont(ofSize: 28.0)
 
         aboutTextView.delegate = self
         aboutTextView.text = """
         2013-2020 - Red Hat, Inc., et al.
+        (whacked modified version)
 
         FreeOTP is licensed under Apache 2.0
 
