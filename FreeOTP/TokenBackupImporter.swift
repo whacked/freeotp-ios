@@ -11,6 +11,7 @@ enum TokenImportError: LocalizedError {
     case invalidSecret
     case unsupportedTokenType(String)
     case addFailed
+    case iconStorageFailed
 
     var errorDescription: String? {
         switch self {
@@ -22,6 +23,8 @@ enum TokenImportError: LocalizedError {
             return "Backup file contains an unsupported token type (\(type))."
         case .addFailed:
             return "Failed to import one or more tokens."
+        case .iconStorageFailed:
+            return "Failed to persist an imported icon."
         }
     }
 }
@@ -34,14 +37,18 @@ struct TokenImportFailure {
 
 final class TokenBackupImporter {
     private let store: TokenStore
+    private let iconStorage: TokenIconStorage
     private struct PreparedEntry {
         let index: Int
         let label: String
+        let identifier: String
         let components: URLComponents
+        let iconData: Data?
     }
 
-    init(store: TokenStore = TokenStore()) {
+    init(store: TokenStore = TokenStore(), iconStorage: TokenIconStorage = TokenIconStorage()) {
         self.store = store
+        self.iconStorage = iconStorage
     }
 
     func importBackup(from url: URL) throws -> [TokenImportFailure] {
@@ -55,13 +62,26 @@ final class TokenBackupImporter {
         let data = try Data(contentsOf: url)
         let plan = try prepareEntries(from: data)
 
+        try iconStorage.clearAll()
         store.eraseAll()
 
         var failures = plan.failures
         for entry in plan.validEntries.reversed() {
-            if store.add(entry.components) == nil {
+            guard let token = store.add(entry.components) else {
                 let reason = TokenImportError.addFailed.errorDescription ?? "Failed to import token."
                 failures.append(TokenImportFailure(index: entry.index, label: entry.label, reason: reason))
+                continue
+            }
+
+            if let iconData = entry.iconData {
+                do {
+                    let fileURL = try iconStorage.saveIcon(data: iconData, identifier: entry.identifier)
+                    token.image = fileURL.absoluteString
+                    _ = Token.store.save(token)
+                } catch {
+                    let reason = TokenImportError.iconStorageFailed.errorDescription ?? "Failed to save icon."
+                    failures.append(TokenImportFailure(index: entry.index, label: entry.label, reason: reason))
+                }
             }
         }
 
@@ -83,15 +103,30 @@ final class TokenBackupImporter {
 
         for (idx, pair) in pairs.enumerated() {
             let entry = pair.1
+            let identifier = pair.0
             do {
                 let components = try makeComponents(for: entry)
-                successes.append(PreparedEntry(index: idx + 1, label: entry.label, components: components))
+                let iconData = decodeIconData(entry.icon, index: idx + 1, label: entry.label, failures: &failures)
+                successes.append(PreparedEntry(index: idx + 1, label: entry.label, identifier: identifier, components: components, iconData: iconData))
             } catch {
                 failures.append(TokenImportFailure(index: idx + 1, label: entry.label, reason: error.localizedDescription))
             }
         }
 
         return (successes, failures)
+    }
+
+    private func decodeIconData(_ base64: String?, index: Int, label: String, failures: inout [TokenImportFailure]) -> Data? {
+        guard let base64 = base64 else {
+            return nil
+        }
+
+        if let data = Data(base64Encoded: base64) {
+            return data
+        }
+
+        failures.append(TokenImportFailure(index: index, label: label, reason: "picture decode failed"))
+        return nil
     }
 
     private func makeComponents(for entry: TokenBackup.Entry) throws -> URLComponents {

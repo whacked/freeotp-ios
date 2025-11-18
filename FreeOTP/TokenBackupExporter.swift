@@ -16,6 +16,7 @@ struct TokenBackup: Codable {
         let period: Int
         let secret: [Int]
         let type: String
+        let icon: String?
     }
 
     let tokenOrder: [String]
@@ -35,9 +36,11 @@ enum TokenExportError: LocalizedError {
 
 final class TokenBackupExporter {
     private let store: TokenStore
+    private let iconStorage: TokenIconStorage
 
-    init(store: TokenStore = TokenStore()) {
+    init(store: TokenStore = TokenStore(), iconStorage: TokenIconStorage = TokenIconStorage()) {
         self.store = store
+        self.iconStorage = iconStorage
     }
 
     func exportFileURL() throws -> URL {
@@ -50,7 +53,9 @@ final class TokenBackupExporter {
                 throw TokenExportError.missingOTP(account: token.account)
             }
 
-            order.append(Self.identifier(for: token))
+            let identifier = Self.identifier(for: token)
+            order.append(identifier)
+            let iconString = iconStorage.iconData(for: identifier)?.base64EncodedString()
             entries.append(TokenBackup.Entry(
                 algo: otp.algorithmName,
                 counter: Int(token.counterValue),
@@ -59,7 +64,8 @@ final class TokenBackupExporter {
                 label: token.label ?? "",
                 period: Int(token.periodValue),
                 secret: otp.secretBytes,
-                type: token.kind.exportTypeDescription
+                type: token.kind.exportTypeDescription,
+                icon: iconString
             ))
         }
 
